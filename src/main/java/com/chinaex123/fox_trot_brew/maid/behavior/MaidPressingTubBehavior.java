@@ -1,6 +1,8 @@
 package com.chinaex123.fox_trot_brew.maid.behavior;
 
+import com.github.tartaricacid.touhoulittlemaid.api.backpack.IMaidBackpack;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidCheckRateTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.backpack.BackpackManager;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidPathFindingBFS;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
@@ -12,6 +14,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
 
 public class MaidPressingTubBehavior extends MaidCheckRateTask {
     private final float movementSpeed;
@@ -90,7 +96,13 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
     protected void tick(ServerLevel world, EntityMaid maid, long gameTime) {
         if (currentWorkPos == null) return;
 
-        // 强力锁定中心，防止女仆滑走
+        if (world.getBlockEntity(currentWorkPos) instanceof IPressingTub tub) {
+            if (tub.getFluidAmount() >= IPressingTub.MAX_FLUID_AMOUNT) {
+                tryExtractWithBucket(world, maid, tub);
+            }
+        }
+
+        // 强力锁定中心,防止女仆滑走
         double targetX = currentWorkPos.getX() + 0.5;
         double targetZ = currentWorkPos.getZ() + 0.5;
         double dx = targetX - maid.getX();
@@ -104,7 +116,7 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
             maid.setDeltaMovement(0, maid.getDeltaMovement().y, 0);
         }
 
-        // 休息阶段：跳满 8 次后进入这里
+        // 休息阶段:跳满 8 次后进入这里
         if (jumpCount >= 8) {
             if (isWorkable(world, currentWorkPos)) {
                 this.jumpCount = 0;
@@ -237,5 +249,60 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
                     (tub.getFluidAmount() > 0 && tub.getFluidAmount() < IPressingTub.MAX_FLUID_AMOUNT);
         }
         return false;
+    }
+
+    /**
+     * 尝试使用桶从压榨桶中取出液体。
+     * <p>
+     * 当压榨桶液体已满时,检查女仆背包中是否有空桶,如果有则使用桶右键压榨桶取出液体,
+     * 并将装满液体的桶放回女仆背包。
+     *
+     * @param world 服务器世界实例
+     * @param maid  女仆实体实例
+     * @param tub   压榨桶方块实体接口
+     */
+    private void tryExtractWithBucket(ServerLevel world, EntityMaid maid, IPressingTub tub) {
+        IItemHandler inventory = maid.getCapability(Capabilities.ItemHandler.ENTITY);
+        if (inventory == null) return;
+
+        int bucketSlot = -1;
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            ItemStack stack = inventory.getStackInSlot(slot);
+            if (stack.is(Items.BUCKET)) {
+                bucketSlot = slot;
+                break;
+            }
+        }
+
+        if (bucketSlot == -1) return;
+
+        boolean hasSpace = false;
+        for (int slot = 6; slot < inventory.getSlots(); slot++) {
+            if (slot == bucketSlot) {
+                continue;
+            }
+            ItemStack stack = inventory.getStackInSlot(slot);
+            if (stack.isEmpty()) {
+                hasSpace = true;
+                break;
+            }
+        }
+
+        if (!hasSpace) {
+            return;
+        }
+
+        ItemStack filledBucketTemplate = new ItemStack(Items.BUCKET);
+        boolean success = tub.getResult(maid, filledBucketTemplate);
+
+        if (success) {
+            inventory.extractItem(bucketSlot, 1, false);
+            inventory.insertItem(bucketSlot, filledBucketTemplate, false);
+
+            maid.swing(InteractionHand.MAIN_HAND);
+            jumpCount = 0;
+            restTimer = 20;
+            jumpTimer = 10;
+        }
     }
 }
