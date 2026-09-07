@@ -20,6 +20,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.wrapper.CombinedInvWrapper;
 import net.minecraftforge.items.ItemHandlerHelper;
 
 import java.util.*;
@@ -32,6 +33,7 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
     private final Map<BlockPos, Long> lastVisits = new HashMap<>();
     private List<PressingTubRecipe> recipes = List.of();
     private BlockPos target;
+    private BlockPos approach;
     private long travelStarted, visitStarted, lastProgress, nextJump;
     private int previousFruit, previousFluid;
     private boolean finished;
@@ -67,7 +69,7 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
             maid.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
             return true;
         }
-        BehaviorUtils.setWalkAndLookTargetMemories(maid, target, movementSpeed, 0);
+        BehaviorUtils.setWalkAndLookTargetMemories(maid, approach == null ? target : approach, movementSpeed, 0);
         return false;
     }
 
@@ -170,7 +172,22 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
         MaidPathFindingBFS paths = new MaidPathFindingBFS(maid.getNavigation().getNodeEvaluator(), world, maid);
         try {
             for (BlockPos pos : collect) {
-                if (paths.canPathReach(pos)) return pos;
+                TubWorkPolicy.Action next = action(world, maid, pos);
+                // A basin is an interaction target, not necessarily a walkable feet node.
+                List<BlockPos> feet = new ArrayList<>();
+                if (next != TubWorkPolicy.Action.PRESS) {
+                    feet.add(pos.north()); feet.add(pos.south());
+                    feet.add(pos.east()); feet.add(pos.west());
+                }
+                feet.add(pos.above());
+                feet.add(pos);
+                feet.sort(Comparator.comparingDouble(p -> p.distToCenterSqr(maid.position())));
+                for (BlockPos foot : feet) {
+                    if (maid.isWithinRestriction(foot) && paths.canPathReach(foot)) {
+                        approach = foot;
+                        return pos;
+                    }
+                }
                 cooldowns.put(pos, world.getGameTime() + 100);
             }
         } finally {
@@ -181,7 +198,7 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
 
     private TubWorkPolicy.Action action(ServerLevel world, EntityMaid maid, BlockPos pos) {
         if (!(world.getBlockEntity(pos) instanceof IPressingTub tub)) return TubWorkPolicy.Action.NONE;
-        IItemHandler inventory = maid.getAvailableBackpackInv();
+        IItemHandler inventory = workInventory(maid);
         boolean full = tub.getFluidAmount() >= BUCKET;
         return TubWorkPolicy.choose(full, full && bucketSlot(inventory, tub) >= 0,
                 !full && canPress(tub, tub.getItems().getStackInSlot(0)),
@@ -211,7 +228,7 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
     }
 
     private void feed(EntityMaid maid, IPressingTub tub) {
-        IItemHandler inventory = maid.getAvailableBackpackInv();
+        IItemHandler inventory = workInventory(maid);
         int slot = feedSlot(inventory, tub);
         if (slot < 0) return;
         ItemStack offered = inventory.extractItem(slot, tub.getItems().getSlotLimit(0), true);
@@ -243,7 +260,7 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
     }
 
     private void collect(EntityMaid maid, IPressingTub tub) {
-        IItemHandler inventory = maid.getAvailableBackpackInv();
+        IItemHandler inventory = workInventory(maid);
         int slot = bucketSlot(inventory, tub);
         if (slot < 0) return;
         ItemStack empty = inventory.extractItem(slot, 1, false);
@@ -256,6 +273,11 @@ public class MaidPressingTubBehavior extends MaidCheckRateTask {
         FluidActionResult filled = FluidUtil.tryFillContainer(empty, tub.getFluid(), BUCKET, null, true);
         returnToBackpack(maid, inventory, filled.isSuccess() ? filled.getResult() : empty);
         if (filled.isSuccess()) maid.swing(InteractionHand.MAIN_HAND);
+    }
+
+    /** Backpack first for results, but also accept supplies equipped in either hand. */
+    private IItemHandler workInventory(EntityMaid maid) {
+        return new CombinedInvWrapper(maid.getAvailableBackpackInv(), maid.getHandsInvWrapper());
     }
 
     private void returnToBackpack(EntityMaid maid, IItemHandler inventory, ItemStack stack) {
