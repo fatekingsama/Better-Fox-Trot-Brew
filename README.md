@@ -1,5 +1,7 @@
 # Better Fox Trot Brew
 
+**English** | [简体中文](README_zh-CN.md)
+
 Minecraft 1.20.1 / Forge. Based on [Fox Trot Brew](https://github.com/WitherRedstone/Fox-Trot-Brew), branch `1.20.1-forge`.
 
 ## 0.1.2 behavior
