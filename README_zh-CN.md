@@ -8,7 +8,7 @@
 
 目前 Better Fox Trot Brew **仅支持 Minecraft 1.20.1 / Forge**。仓库中的 `1.21.1-neoforge` 分支继承自上游项目，暂时保留作为参考；本项目的功能改进**尚未移植到该分支，也未在该版本上测试**。保留此分支不代表已经支持 NeoForge。
 
-如果你希望适配 Minecraft 1.21.1 / NeoForge 或其他版本，欢迎[提交 Issue](https://github.com/fatekingsama/better-fox-trot-brew/issues)，注明 Minecraft 版本、模组加载器及使用需求。我们会根据反馈考虑后续适配优先级，目前暂无明确的发布时间。
+如果你希望适配 Minecraft 1.21.1 / NeoForge 或其他版本，欢迎[提交 Issue](https://github.com/fatekingsama/Better-Fox-Trot-Brew/issues)，注明 Minecraft 版本、模组加载器及使用需求。我们会根据反馈考虑后续适配优先级，目前暂无明确的发布时间。
 
 ## 0.1.2 功能与使用
 
