@@ -4,6 +4,12 @@
 
 Minecraft 1.20.1 / Forge. Based on [Fox Trot Brew](https://github.com/WitherRedstone/Fox-Trot-Brew), branch `1.20.1-forge`.
 
+## Version support
+
+Better Fox Trot Brew currently supports **Minecraft 1.20.1 with Forge only**. The `1.21.1-neoforge` branch was inherited from the upstream project and is retained for reference; the improvements in this fork have **not been ported to or tested on that branch**. Its presence does not indicate NeoForge support.
+
+If you would like support for Minecraft 1.21.1 / NeoForge or another version, please [open an issue](https://github.com/fatekingsama/better-fox-trot-brew/issues) with the Minecraft version, mod loader, and your use case. Requests will help inform future porting priorities; there is no release timeline yet.
+
 ## 0.1.2 behavior
 
 - Select the **Better Fruit Tub Brewing / 果盆酿造（改进版）** maid task.
