@@ -12,7 +12,7 @@ If you would like support for Minecraft 1.21.1 / NeoForge or another version, pl
 
 ## 0.1.2 behavior
 
-- Select the **Better Fruit Tub Brewing / 果盆酿造（改进版）** maid task.
+- Select the **Better Fruit Tub Brewing / 果盆** maid task.
 - Supply fruit and empty buckets in the maid backpack or either hand, leaving space for juice buckets.
 - Full tubs are collected before other available work, including full tubs with no remaining fruit.
 - Collection and feeding can approach adjacent walkable positions; pressing also checks the position above the tub.
