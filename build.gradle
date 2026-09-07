@@ -226,3 +226,13 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
+
+// Standalone regression checks; no JUnit dependency or extra download required.
+tasks.register('policyRegression', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.chinaex123.fox_trot_brew.maid.behavior.TubWorkPolicyTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+}
+tasks.named('check') { dependsOn 'policyRegression' }
+tasks.named('jar', Jar) { from('LICENSE') }
