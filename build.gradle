@@ -206,3 +206,15 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// Standalone regression checks without an additional test framework.
+tasks.register('policyRegression', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.chinaex123.fox_trot_brew.maid.behavior.TubWorkPolicyTest'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+}
+tasks.named('check') { dependsOn 'policyRegression' }
+// Test sources are standalone main programs run by policyRegression, not JUnit tests.
+tasks.named('test', Test) { failOnNoDiscoveredTests = false }
+tasks.named('jar', Jar) { from('LICENSE') }

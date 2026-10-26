@@ -6,7 +6,7 @@ import net.neoforged.fml.common.Mod;
 
 @Mod(FoxTrotBrew.MOD_ID)
 public class FoxTrotBrew {
-    public static final String MOD_ID = "fox_trot_brew";
+    public static final String MOD_ID = "better_fox_trot_brew";
     public static final Logger LOGGER = LogUtils.getLogger();
 
 }
